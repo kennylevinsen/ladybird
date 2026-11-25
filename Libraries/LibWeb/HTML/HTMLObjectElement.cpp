@@ -523,6 +523,13 @@ void HTMLObjectElement::run_object_representation_handler_steps(Fetch::Infrastru
                 .source_document = document(),
                 .history_handling = NavigationHistoryBehavior::Replace,
             }));
+        } else {
+            // AD-HOC: Without a navigation, the content navigable keeps its initial about:blank document, which never
+            //         completely finishes loading, so nothing fires load at the element. Blink fires it, as for an
+            //         iframe's initial about:blank, and pages wait for it to listen to the object's window.
+            queue_an_element_task(HTML::Task::Source::DOMManipulation, GC::create_function(GC::Heap::the(), GC::captures(*this), [](auto& self) {
+                self.dispatch_event(create_event_for_element(self, HTML::EventNames::load));
+            }));
         }
 
         // The object element represents its content navigable.
